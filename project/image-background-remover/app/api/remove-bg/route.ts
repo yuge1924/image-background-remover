@@ -27,7 +27,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      throw new Error('Remove.bg API error');
+      const errorText = await response.text();
+      console.error('Remove.bg API error:', response.status, errorText);
+      return NextResponse.json({ 
+        error: `Remove.bg API error: ${response.status}` 
+      }, { status: response.status });
     }
 
     const buffer = await response.arrayBuffer();
@@ -37,6 +41,10 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to process image' }, { status: 500 });
+    console.error('Error:', error);
+    return NextResponse.json({ 
+      error: 'Failed to process image',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
