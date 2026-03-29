@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { createSubscription } from '@/lib/paypal';
 
-const PLAN_IDS: Record<string, string> = {
-  pro: process.env.PAYPAL_PLAN_ID_PRO || '',
-  business: process.env.PAYPAL_PLAN_ID_BUSINESS || '',
-};
-
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -19,6 +14,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
     }
 
+    // Read at runtime, not at module load time
+    const PLAN_IDS: Record<string, string> = {
+      pro: process.env.PAYPAL_PLAN_ID_PRO || '',
+      business: process.env.PAYPAL_PLAN_ID_BUSINESS || '',
+    };
     const planId = PLAN_IDS[plan];
     if (!planId) {
       return NextResponse.json({ error: 'Plan not configured yet' }, { status: 503 });
