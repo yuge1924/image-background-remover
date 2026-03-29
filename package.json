@@ -10,6 +10,7 @@
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
+    "@paypal/paypal-js": "^9.5.0",
     "@supabase/supabase-js": "^2.100.1",
     "next": "15.3.9",
     "next-auth": "^5.0.0-beta.30",
