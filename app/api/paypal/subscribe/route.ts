@@ -31,9 +31,16 @@ export async function POST(request: NextRequest) {
       `${baseUrl}/dashboard?cancelled=true`
     );
 
-    const approvalUrl = subscription.links?.find((l: { rel: string; href: string }) => l.rel === 'approve')?.href;
+    console.log('PayPal subscription response:', JSON.stringify(subscription));
+    const approvalUrl = subscription.links?.find(
+      (l: { rel: string; href: string }) => l.rel === 'approve' || l.rel === 'approval_url'
+    )?.href;
+
     if (!approvalUrl) {
-      return NextResponse.json({ error: 'Failed to create subscription' }, { status: 500 });
+      return NextResponse.json({
+        error: 'Failed to create subscription',
+        debug: { links: subscription.links, status: subscription.status, name: subscription.name }
+      }, { status: 500 });
     }
 
     return NextResponse.json({ url: approvalUrl });
