@@ -35,10 +35,11 @@ export default function DashboardClient({ user, usage, planPrices }: Props) {
         body: JSON.stringify({ plan }),
       });
       const data = await res.json();
+      console.log('PayPal response:', data);
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || 'Failed to start checkout');
+        alert(data.error || JSON.stringify(data));
         setUpgrading(null);
       }
     } catch {
