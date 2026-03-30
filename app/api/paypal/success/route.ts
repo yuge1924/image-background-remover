@@ -1,38 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
 import { getSubscription } from '@/lib/paypal';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
-    const token = await getToken({
-      req: request,
-      secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
-    });
-
-    if (!token?.email) {
-      return NextResponse.redirect(new URL('/?error=unauthorized', request.url));
-    }
-
     const { searchParams } = new URL(request.url);
     const subscriptionId = searchParams.get('subscription_id');
     const plan = searchParams.get('plan');
+    const email = searchParams.get('email');
 
-    if (!subscriptionId || !plan) {
+    if (!subscriptionId || !plan || !email) {
       return NextResponse.redirect(new URL('/dashboard?error=missing_params', request.url));
     }
 
-    // Verify with PayPal
     const subscription = await getSubscription(subscriptionId);
     if (subscription.status !== 'ACTIVE') {
       return NextResponse.redirect(new URL('/dashboard?error=subscription_inactive', request.url));
     }
 
-    // Update DB
     const { data: user } = await supabaseAdmin
       .from('users')
       .select('id')
-      .eq('email', token.email)
+      .eq('email', email)
       .single();
 
     if (user) {

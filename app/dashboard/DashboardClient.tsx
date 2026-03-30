@@ -32,7 +32,7 @@ export default function DashboardClient({ user, usage, planPrices }: Props) {
       const res = await fetch('/api/paypal/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, email: user.email }),
       });
       const data = await res.json();
       console.log('PayPal response:', data);
