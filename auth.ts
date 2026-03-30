@@ -10,10 +10,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   trustHost: true,
+  cookies: {
+    sessionToken: {
+      name: `__Secure-authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true,
+      },
+    },
+  },
   callbacks: {
     async jwt({ token, account, profile }) {
-      if (account) {
-        token.email = profile?.email;
+      if (account && profile) {
+        token.email = profile.email;
       }
       return token;
     },
