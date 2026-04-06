@@ -23,7 +23,7 @@ export default function DashboardClient({ user, usage, planPrices }: Props) {
   const cancelled = searchParams.get('cancelled');
   const [upgrading, setUpgrading] = useState<string | null>(null);
 
-  const usagePct = Math.min(100, Math.round((usage.used / usage.limit) * 100));
+  const usagePct = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0;
   const isNearLimit = usagePct >= 80;
 
   const handleUpgrade = async (plan: string) => {
@@ -35,147 +35,88 @@ export default function DashboardClient({ user, usage, planPrices }: Props) {
         body: JSON.stringify({ plan, email: user.email }),
       });
       const data = await res.json();
-      console.log('PayPal response:', data);
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || JSON.stringify(data));
+        alert(data.error || 'Upgrade initiation failed');
         setUpgrading(null);
       }
     } catch {
-      alert('Something went wrong, please try again.');
+      alert('Network error, please try again.');
       setUpgrading(null);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 py-4 px-6 shadow-sm">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">✂️</span>
-            <span className="font-bold text-gray-900">Background Remover</span>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto flex items-center justify-between py-4 px-6">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="p-2 bg-indigo-600 rounded-xl text-white group-hover:scale-105 transition-transform">✂️</div>
+            <span className="font-bold text-xl tracking-tight">BG Remover</span>
           </Link>
           <button
             onClick={() => signOut({ callbackUrl: '/' })}
-            className="text-sm text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-all"
+            className="text-sm text-slate-500 hover:text-indigo-600 font-medium px-4 py-2 rounded-xl hover:bg-slate-100 transition-all"
           >
             Sign out
           </button>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
-
-        {/* Success / Cancel banners */}
-        {upgraded && (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-green-700 font-semibold text-center">
-            🎉 Upgrade successful! Your plan has been updated.
-          </div>
-        )}
-        {cancelled && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-700 text-center">
-            Checkout cancelled. You can upgrade anytime.
+      <main className="max-w-5xl mx-auto px-6 py-10 space-y-8">
+        {(upgraded || cancelled) && (
+          <div className={`rounded-2xl p-4 text-center font-medium ${upgraded ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+            {upgraded ? '🎉 Upgrade successful! Your plan has been activated.' : 'Checkout cancelled. You can upgrade anytime.'}
           </div>
         )}
 
-        {/* Profile Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center gap-5">
-          {user.image && (
-            <img src={user.image} alt="avatar" className="w-16 h-16 rounded-full ring-2 ring-indigo-100" />
-          )}
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">{user.name}</h1>
-            <p className="text-sm text-gray-500">{user.email}</p>
-            <span className={`mt-1 inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full
-              ${user.plan === 'free' ? 'bg-gray-100 text-gray-600' :
-                user.plan === 'pro' ? 'bg-indigo-100 text-indigo-700' :
-                'bg-amber-100 text-amber-700'}`}>
-              {planPrices[user.plan]?.label || 'Free'} Plan
-            </span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex items-center gap-6">
+            <img src={user.image} alt="avatar" className="w-20 h-20 rounded-2xl ring-4 ring-slate-100 object-cover" />
+            <div>
+              <h1 className="text-2xl font-bold">{user.name}</h1>
+              <p className="text-slate-500 mb-2">{user.email}</p>
+              <div className="inline-flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-slate-600">
+                {planPrices[user.plan]?.label} Plan
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Usage</h2>
+            <div className="text-4xl font-black mb-1">{usage.used}<span className="text-lg text-slate-400 font-normal"> / {usage.limit}</span></div>
+            <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden mt-3">
+              <div className={`h-full rounded-full transition-all duration-1000 ${isNearLimit ? 'bg-rose-500' : 'bg-indigo-600'}`} style={{ width: `${usagePct}%` }} />
+            </div>
           </div>
         </div>
 
-        {/* Usage Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">This Month&apos;s Usage</h2>
-          <div className="flex items-end justify-between mb-3">
-            <span className="text-3xl font-bold text-gray-900">{usage.used}</span>
-            <span className="text-sm text-gray-400">/ {usage.limit} images</span>
-          </div>
-          <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all ${isNearLimit ? 'bg-red-500' : 'bg-indigo-500'}`}
-              style={{ width: `${usagePct}%` }}
-            />
-          </div>
-          {isNearLimit && user.plan === 'free' && (
-            <p className="mt-2 text-sm text-red-500">⚠️ Running low — <a href="#plans" className="underline">upgrade now</a></p>
-          )}
-          {usage.used === 0 && (
-            <p className="mt-2 text-sm text-gray-400">No images processed this month yet.</p>
-          )}
-        </div>
-
-        {/* Plan Cards */}
-        <div id="plans">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Plans</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <section id="plans">
+          <h2 className="text-2xl font-bold mb-6">Subscription Plans</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {Object.entries(planPrices).map(([plan, info]) => {
               const isCurrent = user.plan === plan;
-              const features = PLAN_FEATURES[plan] || [];
-              const isHigher = (plan === 'pro' && user.plan === 'free') ||
-                               (plan === 'business' && ['free', 'pro'].includes(user.plan));
-
               return (
-                <div key={plan} className={`rounded-2xl border p-5 transition-all
-                  ${isCurrent ? 'border-indigo-400 bg-indigo-50 ring-2 ring-indigo-200' :
-                    plan === 'pro' ? 'border-indigo-200 bg-white' : 'border-gray-100 bg-white'}`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-bold text-gray-900">{info.label}</h3>
-                    {isCurrent && <span className="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-full">Current</span>}
-                    {plan === 'pro' && !isCurrent && <span className="text-xs bg-amber-400 text-amber-900 px-2 py-0.5 rounded-full font-bold">Popular</span>}
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900 mb-4">
-                    {info.monthly === 0 ? 'Free' : `$${info.monthly}/mo`}
-                  </div>
-                  <ul className="space-y-1.5 mb-5">
-                    {features.map(f => (
-                      <li key={f} className="text-sm text-gray-600 flex items-center gap-2">
-                        <span className="text-green-500">✓</span> {f}
-                      </li>
-                    ))}
+                <div key={plan} className={`rounded-3xl border p-7 transition-all ${isCurrent ? 'bg-indigo-900 text-white shadow-xl shadow-indigo-200' : 'bg-white'}`}>
+                  <h3 className="text-xl font-bold mb-2">{info.label}</h3>
+                  <div className="text-4xl font-black mb-6">{info.monthly === 0 ? 'Free' : `$${info.monthly}`}<span className="text-lg font-normal opacity-70">/mo</span></div>
+                  <ul className="space-y-3 mb-8">
+                    {PLAN_FEATURES[plan].map(f => <li key={f} className="flex items-center gap-2 text-sm opacity-90">✓ {f}</li>)}
                   </ul>
-                  {isCurrent ? (
-                    <button disabled className="w-full bg-gray-100 text-gray-400 font-semibold py-2.5 rounded-xl text-sm cursor-not-allowed">
-                      Current Plan
-                    </button>
-                  ) : isHigher ? (
-                    <button
-                      onClick={() => handleUpgrade(plan)}
-                      disabled={upgrading === plan}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition-all text-sm disabled:opacity-60"
-                    >
-                      {upgrading === plan ? 'Redirecting...' : `Upgrade to ${info.label}`}
-                    </button>
-                  ) : (
-                    <button disabled className="w-full bg-gray-100 text-gray-400 font-semibold py-2.5 rounded-xl text-sm cursor-not-allowed">
-                      Downgrade
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleUpgrade(plan)}
+                    disabled={isCurrent || upgrading === plan}
+                    className={`w-full font-bold py-3.5 rounded-2xl transition-all ${isCurrent ? 'bg-white/10' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                  >
+                    {isCurrent ? 'Current Plan' : (upgrading === plan ? '...' : 'Select Plan')}
+                  </button>
                 </div>
               );
             })}
           </div>
-        </div>
-
-        <div className="text-center">
-          <Link href="/" className="text-indigo-600 hover:underline text-sm">
-            ← Back to Background Remover
-          </Link>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }
