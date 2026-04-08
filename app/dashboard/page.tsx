@@ -33,8 +33,14 @@ export default async function DashboardPage() {
         planPrices={PLAN_PRICES}
       />
     );
-  } catch (error) {
-    console.error("Dashboard Error:", error);
-    return <div>Dashboard 暂时无法加载，请稍后再试。</div>;
+  } catch (error: any) {
+    console.error("Dashboard Error details:", error);
+    return (
+        <div style={{padding: '40px', fontFamily: 'sans-serif', lineHeight: '1.6'}}>
+            <h2 style={{color: '#d32f2f'}}>Dashboard 无法加载</h2>
+            <p><strong>错误信息:</strong> {error.message || JSON.stringify(error)}</p>
+            <p>请联系管理员检查 Supabase 配置是否正确。</p>
+        </div>
+    );
   }
 }
