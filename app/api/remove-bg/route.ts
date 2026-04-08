@@ -29,14 +29,10 @@ export async function POST(req: NextRequest) {
       const errorText = await response.text();
       console.error('Remove.bg API Error Response:', errorText);
       
-      // 如果是余额不足，给用户一个更友好的提示，而不是直接报 500
-      if (response.status === 402 || errorText.includes('insufficient_credits')) {
-        return NextResponse.json({ 
-          error: 'API credit limit reached. Please contact the administrator to recharge.' 
-        }, { status: 402 });
-      }
-      
-      return NextResponse.json({ error: `Remove.bg API Error: ${errorText}` }, { status: response.status });
+      // 捕获各种错误，统一返回友好提示，不再把 API 的原始错误暴露给用户
+      return NextResponse.json({ 
+        error: 'Background removal service is temporarily busy. Please try again later.' 
+      }, { status: 503 });
     }
 
     const buffer = await response.arrayBuffer();
